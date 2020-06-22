@@ -12,7 +12,7 @@ import defaultsDeep from '@nodeutils/defaults-deep'
 import libp2p from 'libp2p'
 
 
-export default class CNode extends libp2p {
+export default class CustomNode extends libp2p {
   constructor (_options) {
     const defaults = {
       modules: {
