@@ -5,10 +5,11 @@ export class Storage {
     this.accounts = new Map()
     this.pins = new Map()
   }
-  async addAccount(account, overwrite = true) {
+  async addAccount(account) {
     const isValid = await verifyAccount(account)
     if ( isValid ) {
-      if ( !this.accounts.has(account.publicKey) || overwrite ) {
+      const existent = this.accounts.get(account.publicKey)
+      if ( !existent || existent.updatedAt < account.updatedAt ) {
         this.accounts.set(account.publicKey, account)
       }
     }
