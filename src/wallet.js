@@ -21,7 +21,6 @@ export class Wallet {
     this.chainNode.registerAccount({ ...account, publicKey, signature })
   }
 
-  // title, description, sender, receiver
   async createPin({title, description, receiver}) {
     const sender = this.publicKey
     const pin = { title, description, sender, receiver, createdAt: Date.now() }

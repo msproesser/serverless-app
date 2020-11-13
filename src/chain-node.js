@@ -49,10 +49,11 @@ export class ChainNode extends CustomNode {
   async _pinRegister({ msg: pin, ...all }) {
     this.storage.addPin(pin)
   }
-
+ 
   async registerAccount(account) {
     verifyAccount(account)
-    return this.publish('register-account', account)
+    this.publish('register-account', account)
+    return
   }
 
   listAccounts() {
