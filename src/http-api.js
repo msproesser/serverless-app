@@ -4,13 +4,18 @@ import { ChainNode } from './chain-node'
 
 const app = express()
 app.use(express.json())
-PeerId
-.createFromJSON(require('../'+process.argv[2]))
+
+
+const thePeer = (process.argv[2]) ? 
+PeerId.createFromJSON(require('../'+process.argv[2])) :
+PeerId.create()
+
+thePeer
 .then(async peerId => {
   const chainNode = new ChainNode(peerId)
   await chainNode.start()
 
-  app.post('/accounts', (req, res) => {
+  app.post('/accounts', async (req, res) => {
     try {
       console.log('Registering new account')
       await chainNode.registerAccount(req.body)
@@ -25,7 +30,7 @@ PeerId
     res.json({accounts})
   })
   
-  app.post('/pins', (req, res) => {
+  app.post('/pins', async (req, res) => {
     try {
       console.log('Registering new Pin')
       await chainNode.registerPin(req.body)
@@ -46,6 +51,14 @@ PeerId
     res.json({join: 'OK'})
   })
 
-  app.listen(8000, () => {})
-})
+  app.get('/snapshot', (req, res) => {
+    const snapshot = chainNode._snapshot()
+    res.json({snapshot})
+  })
 
+  app.get('my-address', (req, res) => {
+    res.json({address: []})
+  })
+
+  app.listen(20000, () => {})
+})

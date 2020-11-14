@@ -1,5 +1,5 @@
 import PeerId from 'peer-id'
-import CustomNode from '../libp2p-bundle'
+import CustomNode from './libp2p-bundle'
 import { signAccount, signPin, verifyAccount, verifyPin } from "./helper";
 import { Storage } from "./storage";
 import {pipe} from 'it-pipe'
