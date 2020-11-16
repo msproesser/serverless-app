@@ -32,8 +32,8 @@ export class Storage {
 
   listPins(receiver) {
     if (receiver) {
-      return this.pins.get(receiver) || []
+      return [[receiver, this.pins.get(receiver)]] || []
     }
-    return this.pins.entries
+    return [...this.pins.entries()]
   }
 }

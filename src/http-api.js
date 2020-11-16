@@ -7,7 +7,7 @@ app.use(express.json())
 
 
 const thePeer = (process.argv[2]) ? 
-PeerId.createFromJSON(require('../'+process.argv[2])) :
+PeerId.create() ://PeerId.createFromJSON(require('../'+process.argv[2])) :
 PeerId.create()
 
 thePeer
@@ -19,7 +19,7 @@ thePeer
     try {
       console.log('Registering new account')
       await chainNode.registerAccount(req.body)
-      res.json({sent: 'OK'})
+      res.json({register: 'OK'})
     } catch(err) {
       console.log('error on account register', err)
       res.json({err: err.message})
@@ -34,21 +34,23 @@ thePeer
     try {
       console.log('Registering new Pin')
       await chainNode.registerPin(req.body)
-      res.json({sent: 'OK'})
+      res.json({register: 'OK'})
     } catch(err) {
       console.log('error on pin register', err)
       res.json({err: err.message})
     }
   })
   app.get('/pins', (req, res) => {
-    req.query.receiver
     const pins = chainNode.listPins(req.query.receiver)
     res.json({pins})
   })
 
   app.post('/join-network', (req, res) => {
-    chainNode.joinNetwork(req.body.newtwork).catch(err => res.json({err: err.message}))
-    res.json({join: 'OK'})
+    console.log('joining', req.body.network)
+    chainNode.joinNetwork(req.body.network)
+    .catch(err => res.json({err: err.message}))
+    .then(_ => res.json({join: 'OK'}))
+    
   })
 
   app.get('/snapshot', (req, res) => {
@@ -56,9 +58,9 @@ thePeer
     res.json({snapshot})
   })
 
-  app.get('my-address', (req, res) => {
-    res.json({address: []})
+  app.get('/my-address', (req, res) => {
+    res.json({address: chainNode.fullAddresses})
   })
 
-  app.listen(20000, () => {})
+  app.listen(process.argv[2], () => { console.log('listening on port 20000') })
 })

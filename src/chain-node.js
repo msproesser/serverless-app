@@ -3,6 +3,7 @@ import CustomNode from './libp2p-bundle'
 import { signAccount, signPin, verifyAccount, verifyPin } from "./helper";
 import { Storage } from "./storage";
 import {pipe} from 'it-pipe'
+import fs from 'fs'
 
 export class ChainNode extends CustomNode {
 
@@ -15,6 +16,14 @@ export class ChainNode extends CustomNode {
     })
     this.storage = new Storage()
     console.log('my peerId is ' + peerId.toB58String())
+    fs.readFile('./snapshot.json', (err, data) => {
+      if(err) {
+        return console.log(err)
+      }
+      if (data) {
+        this.merge(JSON.parse(data))
+      }
+    })
   }
 
   start() {
@@ -29,7 +38,13 @@ export class ChainNode extends CustomNode {
 
   _snapshot() {
     const peers = [...this.peerStore.peers.values()]
-      .map(peer => peer.addresses.map(addr => addr.multiaddr.toString() + '/p2p/' + peer.id.toB58String()))
+      .map(peer => peer.addresses.map(addr => {
+        const baseAddr = addr.multiaddr.toString()
+        if(baseAddr.includes('p2p')) {
+          return baseAddr
+        }
+        return addr.multiaddr.toString() + '/p2p/' + peer.id.toB58String() 
+      }))
 
     const accounts = [...this.storage.accounts.values()]
     const pins = [...this.storage.pins.values()].reduce((sum, pinList) => sum.concat(pinList), [])
@@ -43,11 +58,13 @@ export class ChainNode extends CustomNode {
   }
 
   async _accountRegister({ msg: account, ...all }) {
-    this.storage.addAccount(account)
+    await this.storage.addAccount(account)
+    this.doBackup()
   }
 
   async _pinRegister({ msg: pin, ...all }) {
-    this.storage.addPin(pin)
+    await this.storage.addPin(pin)
+    this.doBackup()
   }
  
   async registerAccount(account) {
@@ -79,10 +96,9 @@ export class ChainNode extends CustomNode {
       stream,
       async function (source) {
         for await (const msg of source) {
-          // Output the data as a utf8 string
-          console.log('-> ' + msg.toString())
           const {peers, accounts, pins} = JSON.parse(msg.toString())
           self.merge({peers, accounts, pins})
+          self.doBackup()
         }
       }
     )
@@ -105,10 +121,22 @@ export class ChainNode extends CustomNode {
     peers.forEach(peerAddrs => peerAddrs.reduce(async (dialSuccess, addr) => {
       if (!dialSuccess) {
         console.log('dialing: ', addr)
-        return await this.chainNode.dial(addr).then(r => true).catch(err => false)
+        return await this.dial(addr).then(r => true).catch(err => false)
       }
       return true
     }, false))
+  }
+
+  doBackup() {
+    console.log('change received, doing backup')
+    fs.writeFile('./snapshot.json', JSON.stringify(this._snapshot()), (err, data) => {
+      if (err) {
+        return console.log(err)
+      }
+      if (data) {
+        console.log(data)
+      }
+    })
   }
 }
 

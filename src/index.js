@@ -1,60 +1,75 @@
-import express from 'express'
-const app = express()
-app.use(express.json())
-
+import Vorpal from 'vorpal'
 import PeerId from 'peer-id'
-import { exit } from 'process'
 import { Wallet } from './wallet'
+import fetch from 'node-fetch'
 
-if(!process.argv[2]) {
-  console.log("you must pass a peer-id.json, generate with:\n    npx peer-id --type ed25519 --bytes 2048 > peer-id.json")
-  exit(1)
+const hostname = process.env.PINBERNETES_HOST || 'localhost'
+const port = process.env.PINBERNETES_PORT || 20000
+const vorpal = Vorpal()
+
+function post(body) {
+  return { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }
+  }
 }
 
-PeerId.createFromJSON(require('../'+process.argv[2]))
+PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
 .then(async peerId => {
   const wallet = new Wallet(peerId)
-  console.log('1')
-  await wallet.start()
-  if (!!process.argv[3]) await wallet.joinNetwork(process.argv[3])
+  vorpal.command('account register <name> <email>')
+  .action(async function(args, callback) {
+    const payload = await wallet.registerAccount({name: args.name, email: args.email})
+    const response = await fetch(`http://${hostname}:${port}/accounts`, post(payload))
+    this.log('Account register', await response.json())
+    
+    callback()
+  })
 
-  wallet.register({name: 'matheus', email: 'matheuss@bla.com'})
-  setTimeout(() => {
-    console.log(wallet.listAccounts())
-    console.log('OK done')
-  }, 100);
+  vorpal.command('account list')
+  .action(async function(args, callback) {
+    const response = await fetch(`http://${hostname}:${port}/accounts`)
+    this.log('Account list', await response.json())
+    callback()
+  })
+
+  vorpal.command('pin register <title> <description> <receiver>')
+  .action(async function(args, callback) {
+    const {title, description, receiver} = args 
+    const payload = await wallet.registerPin({title, description, receiver})
+
+    const response = await fetch(`http://${hostname}:${port}/pins`, post(payload))
+    this.log('Pin register', await response.json())
+
+    callback()
+  })
+
+  vorpal.command('pin list [receiver]')
+  .action(async function(args, callback) {
+    let query = '';
+    if (args.receiver) { query = '?receiver='+args.receiver }
+
+    const response = await fetch(`http://${hostname}:${port}/pins${query}`)
+    this.log('Account list', await response.json())
+    callback()
+  })
+
+  vorpal.command('join network <address>')
+  .action(async function(args, callback) {
+    const response = await fetch(`http://${hostname}:${port}/join-network`, post({network: args.address}))
+    this.log('Join result', await response.json())
+    callback()
+  })
+
+  vorpal.command('snapshot')
+  .action(function(args, callback) {
+    
+    callback()
+  })
+
+  vorpal.command('get-address')
+  .action(async function(args, callback) {
+    const response = await fetch(`http://${hostname}:${port}/my-address`)
+    this.log('my address list', (await response.json()).address)
+    callback()
+  })
+vorpal.delimiter('P9S >').show()
 })
-
-if(false) {
-
-const pid = require('peer-id')
-const {Wallet} = require('./src/wallet')
-let wallet;
-pid.createFromJSON(require('./other-peer')).then(peerid => {
-  wallet = new Wallet(peerid)
-  wallet.start()
-})
-
-wallet.register({name: 'other', email: 'other@gmail.com'})
-
-
-
-
-const pid = require('peer-id')
-const {Wallet} = require('./src/wallet')
-let wallet;
-pid.createFromJSON(require('./my-id')).then(peerid => {
-  wallet = new Wallet(peerid)
-  wallet.start()
-})
-
-wallet.joinNetwork('/ip4/127.0.0.1/tcp/36597/p2p/12D3KooWG39WpHhHyR9fVh5WPSciwmwvw4CRDHu1RGoUoQXqvYEQ')
-wallet.register({name: 'matheuss', email: 'matheus@gmail.com'})
-wallet.createPin({title:'exemplo 1', description: 'esse exemplo ta de parabens ein pqp', receiver: 'CAESIFxsXT3N9N1gFb/UqKKGHhiL5IeEI0C86R1aaUQ54/Yt'})
-
-
-
-
-
-
-}
