@@ -1,4 +1,5 @@
 import Vorpal from 'vorpal'
+import Table from 'cli-table'
 import PeerId from 'peer-id'
 import { Wallet } from './wallet'
 import fetch from 'node-fetch'
@@ -15,11 +16,12 @@ function post(body) {
 PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
 .then(async peerId => {
   const wallet = new Wallet(peerId)
+
   vorpal.command('account register <name> <email>')
   .action(async function(args, callback) {
     const payload = await wallet.registerAccount({name: args.name, email: args.email})
     const response = await fetch(`http://${hostname}:${port}/accounts`, post(payload))
-    this.log('Account register', await response.json())
+    this.log('- Account register', await response.json())
     
     callback()
   })
@@ -27,7 +29,12 @@ PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
   vorpal.command('account list')
   .action(async function(args, callback) {
     const response = await fetch(`http://${hostname}:${port}/accounts`)
-    this.log('Account list', await response.json())
+    const results = await response.json()
+    const table = new Table({head: ['name', 'email', 'address']})
+    results.accounts.forEach(account => {
+      table.push([account.name, account.email, account.publicKey])
+    })
+    this.log(table.toString())
     callback()
   })
 
@@ -37,7 +44,7 @@ PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
     const payload = await wallet.registerPin({title, description, receiver})
 
     const response = await fetch(`http://${hostname}:${port}/pins`, post(payload))
-    this.log('Pin register', await response.json())
+    this.log('- Pin register', await response.json())
 
     callback()
   })
@@ -48,7 +55,15 @@ PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
     if (args.receiver) { query = '?receiver='+args.receiver }
 
     const response = await fetch(`http://${hostname}:${port}/pins${query}`)
-    this.log('Account list', await response.json())
+    const results = await response.json()
+    results.pins.forEach(([receiver, pinList]) => {
+      const table = new Table({head: ['Title', 'Description', 'Sender']})
+      pinList.forEach(pin => {
+        table.push([pin.title, pin.description, pin.sender])
+      })
+      this.log('- Receiver:', receiver)
+      this.log(table.toString())
+    })
     callback()
   })
 
