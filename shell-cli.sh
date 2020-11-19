@@ -1,51 +1,40 @@
-#!/bin/bash
-
-entry() {
-  target=$1
-  shift
-  case $target in
-  account)
-    onAccounts $@
-  ;;
-  pin)
-    onPins $@
-  ;;
-  *)
-    echo $target "must be account or pin"
-  ;;
-  esac
+setup() {
+  $(mkdir ~/.team-choice-awards)
+  touch ~/.team-choice-awards/snapshot.json
+  if [ ! -f ~/.team-choice-awards/peer-id.json ]; then
+    docker run --rm matsproesser/team-choice-awards \
+    npx peer-id --type ed25519 > ~/.team-choice-awards/peer-id.json
+  fi
 }
 
-onAccounts() {
-  target=$1
-  shift
-  case $target in
-  list)
-    echo "acc list"
-  ;;
-  register)
-    echo "acc register"
-  ;;
-  *)
-    echo $target "must be list or register"
-  ;;
-  esac
+start_server() {
+  setup
+  docker run \
+  --restart always \
+  --network host \
+  --name tca-core \
+  -v $HOME/.team-choice-awards/peer-id.json:/app/peer-id.json \
+  -v $HOME/.team-choice-awards/snapshot.json:/app/snapshot.json \
+  matsproesser/team-choice-awards npm run chain
 }
 
-onPins() {
-  target=$1
-  shift
-  case $target in
-  list)
-    echo "pin list"
-  ;;
-  register)
-    echo "pin register"
-  ;;
-  *)
-    echo $target "must be list or register"
-  ;;
-  esac
+start_cli() {
+  docker run -it --rm --network host \
+  -v $HOME/.team-choice-awards/peer-id.json:/app/peer-id.json \
+  matsproesser/team-choice-awards npm run cli
 }
 
-entry $@
+case $1 in
+  setup)
+    setup
+  ;;
+  server)
+    start_server
+  ;;
+  cli|client)
+    start_cli
+  ;;
+  *)
+    echo "command must be 'server' or 'cli'"
+  ;;
+esac

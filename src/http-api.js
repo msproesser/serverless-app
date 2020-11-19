@@ -5,10 +5,9 @@ import { ChainNode } from './chain-node'
 const app = express()
 app.use(express.json())
 
+const PEER_ID_FILE = process.env.PEER_ID_FILE || '../peer-id.json'
 
-const thePeer = (process.argv[2]) ? 
-PeerId.create() ://PeerId.createFromJSON(require('../'+process.argv[2])) :
-PeerId.create()
+const thePeer = PeerId.createFromJSON(require(PEER_ID_FILE))
 
 thePeer
 .then(async peerId => {
@@ -62,5 +61,5 @@ thePeer
     res.json({address: chainNode.fullAddresses})
   })
 
-  app.listen(process.argv[2], () => { console.log('listening on port 20000') })
+  app.listen(20000, () => { console.log('listening on port 20000') })
 })

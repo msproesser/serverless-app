@@ -5,6 +5,8 @@ import { Storage } from "./storage";
 import {pipe} from 'it-pipe'
 import fs from 'fs'
 
+const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || './snapshot.json'
+
 export class ChainNode extends CustomNode {
 
   constructor(peerId) {
@@ -16,12 +18,16 @@ export class ChainNode extends CustomNode {
     })
     this.storage = new Storage()
     console.log('my peerId is ' + peerId.toB58String())
-    fs.readFile('./snapshot.json', (err, data) => {
+    fs.readFile(SNAPSHOT_FILE, (err, data) => {
       if(err) {
         return console.log(err)
       }
       if (data) {
-        this.merge(JSON.parse(data))
+        try {
+          data.length > 0 && this.merge(JSON.parse(data))
+        } catch (err) {
+          console.log('Error to load snapshot')
+        }
       }
     })
   }

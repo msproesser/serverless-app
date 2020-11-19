@@ -5,7 +5,8 @@
   "main": "index.js",
   "module": "./src/http-api.js",
   "scripts": {
-    "chain": "node -r esm ./src/http-api.js"
+    "chain": "node -r esm ./src/http-api.js",
+    "cli": "node -r esm ./src/index.js"
   },
   "repository": {
     "type": "git",

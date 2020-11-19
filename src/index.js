@@ -4,8 +4,10 @@ import PeerId from 'peer-id'
 import { Wallet } from './wallet'
 import fetch from 'node-fetch'
 
-const hostname = process.env.PINBERNETES_HOST || 'localhost'
-const port = process.env.PINBERNETES_PORT || 20000
+const hostname = process.env.SERVER_HOST || 'localhost'
+const port = process.env.SERVER_PORT || 20000
+const PEER_ID = process.env.PEER_ID || '../peer-id.json'
+
 const vorpal = Vorpal()
 
 function post(body) {
@@ -13,7 +15,7 @@ function post(body) {
   }
 }
 
-PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
+PeerId.createFromJSON(require(PEER_ID))
 .then(async peerId => {
   const wallet = new Wallet(peerId)
 
@@ -86,5 +88,5 @@ PeerId.createFromJSON(require(process.env.WALLET_PEER_ID || '../my-id.json'))
     this.log('my address list', (await response.json()).address)
     callback()
   })
-vorpal.delimiter('P9S >').show()
+vorpal.delimiter('Team Choice Awards CLI>').show()
 })
