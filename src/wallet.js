@@ -1,5 +1,4 @@
 import PeerId from "peer-id";
-import { ChainNode } from "./chain-node"
 import { signAccount, signPin } from "./helper";
 
 

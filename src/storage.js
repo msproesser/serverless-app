@@ -1,9 +1,13 @@
 import { verifyAccount, verifyPin } from "./helper"
 
 export class Storage {
-  constructor() {
+  constructor(initialState) {
     this.accounts = new Map()
     this.pins = new Map()
+    this.peers = new Set()
+    if (initialState) {
+      this.merge(initialState)
+    }
   }
   async addAccount(account) {
     const isValid = await verifyAccount(account)
@@ -26,6 +30,10 @@ export class Storage {
     }
   }
 
+  addPeer(peer) {
+    this.peers.add(peer)
+  }
+
   listAccounts() {
     return [...this.accounts.values()]
   }
@@ -35,5 +43,23 @@ export class Storage {
       return [[receiver, this.pins.get(receiver)]] || []
     }
     return [...this.pins.entries()]
+  }
+
+  listPeers() {
+    return [...this.peers]
+  }
+
+  merge({peers = [], accounts = [], pins = []}) {
+    const newAccounts = accounts.map(account => this.addAccount(account))
+    const newPins = pins.map(pin => this.addPin(pin))
+    peers.forEach(peerAddrs => this.addPeer(peerAddrs))
+    return Promise.all(newAccounts, newPins)
+  }
+
+  snapshot() {
+    const peers = this.listPeers()
+    const accounts = this.listAccounts()
+    const pins = this.listPins()
+    return { peers, accounts, pins }
   }
 }

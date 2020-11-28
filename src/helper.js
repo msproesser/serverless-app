@@ -1,7 +1,8 @@
 import PeerId from "peer-id"
 
+const SEPARATOR = '$&$'
 function signBuffer(arr) {
-  return Buffer.from(arr.reduce((sum, value) => sum + value))
+  return Buffer.from(arr.reduce((sum, value) => sum + SEPARATOR + value))
 }
 
 export async function verifyAccount(account) {
@@ -27,4 +28,19 @@ export async function verifyPin({title, description, sender, receiver, createdAt
 
 export async function signPin(privateKey, {title, description, receiver, createdAt}) {
   return (await privateKey.sign(signBuffer([title, description, receiver, createdAt]))).toString('base64')
+}
+
+export async function retry(count, fn) {
+  let error;
+  for (let i = 0; i < count; i++) {
+    const result = await fn().catch(err => {
+      error = err
+      return false
+    })
+    if (result != false) {
+      return result
+    }
+  }
+  console.log('retry error: ', error)
+  throw new Error('too many retries')
 }

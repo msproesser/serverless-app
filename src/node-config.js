@@ -14,9 +14,18 @@ import defaultsDeep from '@nodeutils/defaults-deep'
 import libp2p from 'libp2p'
 
 
-export default class CustomNode extends libp2p {
-  constructor (_options) {
+export default class NodeP2P extends libp2p {
+  constructor (peerId) {
     const defaults = {
+      peerId,
+      addresses: {
+        listen: [
+          '/ip4/0.0.0.0/tcp/0/',
+          '/ip6/::/tcp/0',
+          '/ip4/0.0.0.0/tcp/0/ws',
+          '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+        ]
+      },
       modules: {
         transport: [ TCP, WS, WebrtcStar ],
         streamMuxer: [ mplex ],
@@ -44,7 +53,6 @@ export default class CustomNode extends libp2p {
         }
       }
     }
-    console.log(defaultsDeep(_options, defaults))
-    super(defaultsDeep(_options, defaults))
+    super(defaults)
   }
 }

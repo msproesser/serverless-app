@@ -1,5 +1,5 @@
 setup() {
-  $(mkdir ~/.team-choice-awards)
+  mkdir -p ~/.team-choice-awards
   touch ~/.team-choice-awards/snapshot.json
   if [ ! -f ~/.team-choice-awards/peer-id.json ]; then
     docker run --rm matsproesser/team-choice-awards \
