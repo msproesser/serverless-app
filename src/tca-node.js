@@ -1,6 +1,6 @@
 import PeerId from 'peer-id'
 import NodeP2P from './node-config'
-import { retry } from "./helper";
+import { retry, streamToJSON } from "./helper";
 import { Storage } from "./storage";
 import {pipe} from 'it-pipe'
 import fs from 'fs'
@@ -21,14 +21,16 @@ export class TcaNode {
           console.log('Error to load snapshot', err)
         }
       }
-    })
-    this.nodeP2p.start().then(_ => {
-      this.nodeP2p.handle('/tca-sync/1.0', msg => this.patchHandler(msg))
-      this.fullAddresses = this.nodeP2p.multiaddrs.map(ma => ma.toString() + '/p2p/' + this.nodeP2p.peerId.toB58String())
-      this.storage.addPeer('/p2p/' + this.nodeP2p.peerId.toB58String())
-      console.log(this.fullAddresses)
+      this.nodeP2p.start().then(_ => {
+        this.nodeP2p.handle('/tca-sync/1.0', msg => this.patchHandler(msg))
+        this.fullAddresses = this.nodeP2p.multiaddrs.map(ma => ma.toString() + '/p2p/' + this.nodeP2p.peerId.toB58String())
+        this.storage.addPeer('/p2p/' + this.nodeP2p.peerId.toB58String())
+        console.log('my address: /p2p/' + this.nodeP2p.peerId.toB58String())
+      })
+      this.storage.listPeers().forEach(peer => this.joinNetwork(peer))
     })
   }
+
   async joinNetwork(nodeAddress) {
     const p2pAddress = nodeAddress.substring(nodeAddress.indexOf('/p2p/'))
     const snapshot = this.storage.snapshot()
@@ -61,6 +63,16 @@ export class TcaNode {
   async patchPeer(peer, patch) {
     try {
       const {stream} = await retry(3, () => this.nodeP2p.dialProtocol(peer, '/tca-sync/1.0'))
+      if (patch.sync) {
+        console.log('waiting for sync feedback of peer: ' + peer)
+        pipe(
+          stream,
+          streamToJSON(snapshotDiff => {
+            console.log('receiving feedback diff peer: ' + peer)
+            this.patch(snapshotDiff)
+          })
+        )
+      }
       pipe(
         [JSON.stringify(patch)],
         stream
@@ -76,19 +88,17 @@ export class TcaNode {
     const self = this
     pipe(
       stream,
-      async function (source) {
-        for await (const msg of source) {
-          const snapshotDiff = JSON.parse(msg.toString())
-          self.patch(snapshotDiff)
+      streamToJSON(snapshotDiff => {
+        console.log('handling new patch')
+        this.patch(snapshotDiff)
           if (snapshotDiff.sync) {
             console.log('sending snapshot feedback')
             pipe(
-              [self.storage.snapshot()],
+              [JSON.stringify(this.storage.snapshot())],
               stream
             )
           }
-        }
-      }
+      })
     )
   }
 
@@ -98,7 +108,7 @@ export class TcaNode {
   }
 
   doBackup() {
-    console.log('change received, doing backup', this.storage.snapshot())
+    console.log('change received, doing backup')
     fs.writeFile(SNAPSHOT_FILE, JSON.stringify(this.storage.snapshot(), null, 4), (err, data) => {
       if (err) { return console.log(err) }
       if (data) { console.log(data) }

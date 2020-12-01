@@ -44,3 +44,13 @@ export async function retry(count, fn) {
   console.log('retry error: ', error)
   throw new Error('too many retries')
 }
+
+export function streamToJSON(handler) {
+  return async function streamToJSON(source) {
+    for await (const msg of source) {
+      const srcJson = JSON.parse(msg.toString())
+      handler(srcJson)
+    }
+  }
+
+}

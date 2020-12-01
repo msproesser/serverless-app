@@ -77,8 +77,9 @@ PeerId.createFromJSON(require(PEER_ID))
   })
 
   vorpal.command('snapshot')
-  .action(function(args, callback) {
-    
+  .action(async function(args, callback) {
+    const response = await fetch(`http://${hostname}:${port}/snapshot`)
+    console.log(JSON.stringify(await response.json(), null, 4))
     callback()
   })
 
