@@ -1,5 +1,5 @@
 import PeerId from "peer-id"
-
+import fs from 'fs'
 const SEPARATOR = '$&$'
 function signBuffer(arr) {
   return Buffer.from(arr.reduce((sum, value) => sum + SEPARATOR + value))
@@ -41,7 +41,6 @@ export async function retry(count, fn) {
       return result
     }
   }
-  console.log('retry error: ', error)
   throw new Error('too many retries')
 }
 
@@ -52,5 +51,21 @@ export function streamToJSON(handler) {
       handler(srcJson)
     }
   }
+}
 
+export function readFile(file) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(file, (err, data) => {
+      if(err) { return reject(err) }
+      try {
+        if (data && data.length > 0) {
+          return resolve(JSON.parse(data))
+        } else {
+          return resolve({})
+        }
+      } catch (err) {
+        reject(err)
+      }
+    })
+  })
 }

@@ -9,7 +9,7 @@ export class Storage {
       this.merge(initialState)
     }
   }
-  async addAccount(account) {
+  async _addAccount(account) {
     const isValid = await verifyAccount(account)
     if ( isValid ) {
       const existent = this.accounts.get(account.publicKey)
@@ -19,14 +19,14 @@ export class Storage {
     }
   }
 
-  async addPin(pin) {
+  async _addPin(pin) {
     const isValid = await verifyPin(pin)
     if (isValid) {
-        const pins = this.pins.get(pin.receiver) || []
-        const exists = pins.filter(p => p.signature === pin.signature) > 0
-        if (!exists) {
-          this.pins.set(pin.receiver, [...pins, pin])
-        }
+      const pins = this.pins.get(pin.receiver) || []
+      const exists = pins.filter(p => p.signature === pin.signature) > 0
+      if (!exists) {
+        this.pins.set(pin.receiver, [...pins, pin])
+      }
     }
   }
 
@@ -50,8 +50,8 @@ export class Storage {
   }
 
   merge({peers = [], accounts = [], pins = []}) {
-    const newAccounts = accounts.map(account => this.addAccount(account))
-    const newPins = pins.map(pin => this.addPin(pin))
+    const newAccounts = accounts.map(account => this._addAccount(account))
+    const newPins = pins.map(pin => this._addPin(pin))
     peers.forEach(peerAddrs => this.addPeer(peerAddrs))
     return Promise.all(newAccounts, newPins)
   }

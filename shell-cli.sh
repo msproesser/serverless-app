@@ -9,19 +9,21 @@ setup() {
 
 start_server() {
   setup
-  docker run \
-  --restart always \
-  --network host \
-  --name tca-core \
+  docker run --restart always --name tca-core \
   -v $HOME/.team-choice-awards/peer-id.json:/app/peer-id.json \
   -v $HOME/.team-choice-awards/snapshot.json:/app/snapshot.json \
   matsproesser/team-choice-awards npm run chain
 }
 
 start_cli() {
-  docker run -it --rm --network host \
-  -v $HOME/.team-choice-awards/peer-id.json:/app/peer-id.json \
-  matsproesser/team-choice-awards npm run cli
+  docker exec -it tca-core npm run cli
+}
+
+refresh() {
+  docker stop tca-core 
+  docker rm tca-core
+  rm $HOME/.team-choice-awards/snapshot.json
+  docker pull matsproesser/team-choice-awards
 }
 
 case $1 in
@@ -35,6 +37,6 @@ case $1 in
     start_cli
   ;;
   *)
-    echo "command must be 'server' or 'cli'"
+    echo "command must be 'server', 'cli' or 'refresh'"
   ;;
 esac

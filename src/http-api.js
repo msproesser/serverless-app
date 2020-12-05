@@ -1,7 +1,6 @@
 import express from 'express'
 import PeerId from 'peer-id'
-import { TcaNode } from './tca-node'
-
+import ApiFactory from './tca-core'
 const app = express()
 app.use(express.json())
 
@@ -12,12 +11,12 @@ const thePeer = PeerId.createFromJSON(require(PEER_ID_FILE))
 thePeer
 .then(async peerId => {
   console.log('peerId: ', PeerId.isPeerId(peerId))
-  const tcaNode = new TcaNode(peerId)
+  const api = await ApiFactory(peerId)
 
   app.post('/accounts', async (req, res) => {
     try {
       console.log('Registering new account')
-      await tcaNode.registerAccount(req.body)
+      api.account.register(req.body)
       res.json({register: 'OK'})
     } catch(err) {
       console.log('error on account register', err)
@@ -25,14 +24,14 @@ thePeer
     }
   })
   app.get('/accounts', (req, res) => {
-    const accounts = tcaNode.listAccounts()
+    const accounts = api.account.list()
     res.json({accounts})
   })
   
   app.post('/pins', async (req, res) => {
     try {
       console.log('Registering new Pin')
-      await tcaNode.registerPin(req.body)
+      api.pin.register(req.body)
       res.json({register: 'OK'})
     } catch(err) {
       console.log('error on pin register', err)
@@ -40,25 +39,25 @@ thePeer
     }
   })
   app.get('/pins', (req, res) => {
-    const pins = tcaNode.listPins(req.query.receiver)
+    const pins = api.pin.list(req.query.receiver)
     res.json({pins})
   })
 
   app.post('/join-network', (req, res) => {
     console.log('joining', req.body.network)
-    tcaNode.joinNetwork(req.body.network)
+    api.joinNetwork(req.body.network)
     .catch(err => res.json({err: err.message}))
     .then(_ => res.json({join: 'OK'}))
     
   })
 
   app.get('/snapshot', (req, res) => {
-    const snapshot = tcaNode.storage.snapshot()
+    const snapshot = api.snapshot()
     res.json({snapshot})
   })
 
   app.get('/my-address', (req, res) => {
-    res.json({address: tcaNode.fullAddresses})
+    res.json({address: ''})
   })
 
   app.listen(20000, () => { console.log('listening on port 20000') })
