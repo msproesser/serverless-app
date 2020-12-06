@@ -1,8 +1,9 @@
 import pipe from "it-pipe"
-import { retry, streamToJSON } from "./helper"
+import { retry, streamToJSON } from "../helper"
 
-export default function(nodeP2p, protocol) {
+export default async function(nodeP2p, protocol) {
   const commInterface = {}
+  const knownPeers = new Set()
   commInterface.handle = function(handler) {
     nodeP2p.handle(protocol, ({stream}) => {
       pipe(
@@ -31,9 +32,23 @@ export default function(nodeP2p, protocol) {
     }
   }
 
+  commInterface.broadcast = function(message, responseHandler = () => {}) {
+    commInterface.send([...knownPeers], message, responseHandler)
+  }
+
+  commInterface.addPeer = function(peer) {
+    knownPeers.add(peer)
+  }
+
   commInterface.send = function(peerList, message, responseHandler = () => {}) {
     peerList.forEach(peer => sendMessageToPeer(peer, message, responseHandler))
   }
-  // move nodep2p.start() here
+  
+  await nodeP2p.start().then(_ => {
+    const fullAddress = '/p2p/' + nodeP2p.peerId.toB58String()
+    console.log('my address: ' + fullAddress)
+    commInterface.myAddress = fullAddress
+  })
+
   return commInterface
 }

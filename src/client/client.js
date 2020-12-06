@@ -6,7 +6,7 @@ import fetch from 'node-fetch'
 
 const hostname = process.env.SERVER_HOST || 'localhost'
 const port = process.env.SERVER_PORT || 20000
-const PEER_ID = process.env.PEER_ID || '../peer-id.json'
+const PEER_ID = process.env.PEER_ID || '../../peer-id.json'
 
 const vorpal = Vorpal()
 

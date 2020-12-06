@@ -1,6 +1,7 @@
 import express from 'express'
 import PeerId from 'peer-id'
-import ApiFactory from './tca-core'
+import CoreFactory from './core/tca-core'
+import PinModule from './tca-modules/pin'
 const app = express()
 app.use(express.json())
 
@@ -11,7 +12,7 @@ const thePeer = PeerId.createFromJSON(require(PEER_ID_FILE))
 thePeer
 .then(async peerId => {
   console.log('peerId: ', PeerId.isPeerId(peerId))
-  const api = await ApiFactory(peerId)
+  const api = await CoreFactory(peerId, [PinModule])
 
   app.post('/accounts', async (req, res) => {
     try {
@@ -57,7 +58,7 @@ thePeer
   })
 
   app.get('/my-address', (req, res) => {
-    res.json({address: ''})
+    res.json({address: api.myAddress()})
   })
 
   app.listen(20000, () => { console.log('listening on port 20000') })

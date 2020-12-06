@@ -6,7 +6,7 @@
   "module": "./src/http-api.js",
   "scripts": {
     "chain": "node -r esm ./src/http-api.js",
-    "cli": "node -r esm ./src/client.js"
+    "cli": "node -r esm ./src/client/client.js"
   },
   "repository": {
     "type": "git",

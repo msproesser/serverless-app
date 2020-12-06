@@ -1,10 +1,9 @@
-import { verifyAccount, verifyPin } from "./helper"
+import { verifyAccount, verifyPin } from "../../helper"
 
 export class Storage {
   constructor(initialState) {
     this.accounts = new Map()
     this.pins = new Map()
-    this.peers = new Set()
     if (initialState) {
       this.merge(initialState)
     }
@@ -21,17 +20,14 @@ export class Storage {
 
   async _addPin(pin) {
     const isValid = await verifyPin(pin)
-    if (isValid) {
+    const receiver = this.accounts.get(pin.receiver) || false
+    if (isValid && !!receiver) {
       const pins = this.pins.get(pin.receiver) || []
       const exists = pins.filter(p => p.signature === pin.signature) > 0
       if (!exists) {
         this.pins.set(pin.receiver, [...pins, pin])
       }
     }
-  }
-
-  addPeer(peer) {
-    this.peers.add(peer)
   }
 
   listAccounts() {
@@ -45,21 +41,18 @@ export class Storage {
     return [...this.pins.entries()]
   }
 
-  listPeers() {
-    return [...this.peers]
+  async merge({accounts = [], pins = []}) {
+    const _ = await Promise.all(accounts.map(account => this._addAccount(account)))
+    return await Promise.all(pins.map(pin => this._addPin(pin)))
   }
 
-  merge({peers = [], accounts = [], pins = []}) {
-    const newAccounts = accounts.map(account => this._addAccount(account))
-    const newPins = pins.map(pin => this._addPin(pin))
-    peers.forEach(peerAddrs => this.addPeer(peerAddrs))
-    return Promise.all(newAccounts, newPins)
+  load(backup) {
+    this.merge(backup)
   }
-
+  
   snapshot() {
-    const peers = this.listPeers()
     const accounts = this.listAccounts()
     const pins = this.listPins()
-    return { peers, accounts, pins }
+    return { accounts, pins }
   }
 }

@@ -1,5 +1,5 @@
 import PeerId from "peer-id";
-import { signAccount, signPin } from "./helper";
+import { signAccount, signPin } from "../helper";
 
 
 export class Wallet {
