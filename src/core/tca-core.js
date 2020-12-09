@@ -58,6 +58,11 @@ export default async function(peerId, modules = []) {
 
   communicationInterface.handle(commandHandler)
   api.sync()
+  api.snapshot = () => {
+    return moduleInstances.reduce((snapshot, module) => {
+      return Object.assign(snapshot, module.snapshot())
+    }, {})
+  }
   console.log('API', api)
   return api
 }
