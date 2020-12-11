@@ -4,43 +4,9 @@ import fs from 'fs'
 import communicationInterfaceFactory from './communication-interface'
 
 import CoreModule from '../tca-modules/core'
+import { mergeModules, snapshotLoad, snapshotHandler, nodeHandler } from './helper'
 
 const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || './snapshot.json'
-
-function nodeHandler(handlers = []) {
-  function commandHandler(command) {
-    return handlers
-    .map(handle => handle(command))
-    .filter(response => !!response && typeof(response) === 'object')
-    .map(JSON.stringify)
-  }
-  return commandHandler
-}
-
-function mergeModules(modules) {
-  return modules.reduce((globalModule, module) => {
-    return {
-      api: Object.assign(globalModule.api, module.api),
-      handlers: [...globalModule.handlers, ...module.handlers]
-    }
-  }, {api: {}, handlers: []})
-}
-
-function snapshotHandler(modules, snapshotFile) {
-  return function() {
-    setTimeout(() => {
-      const snapshot = modules.reduce((snapshot, module) => {
-        return Object.assign(snapshot, module.snapshot())
-      }, {})
-      fs.writeFile(snapshotFile, JSON.stringify(snapshot, null, 4), () => {})
-    }, 0)
-  }
-}
-
-async function snapshotLoad(modules, snapshotFile) {
-  const snapshot = await readFile(snapshotFile)
-  modules.forEach(module => module.load(snapshot))
-}
 
 export default async function(peerId, modules = []) {
   const nodeP2p = new NodeP2P(peerId)
@@ -57,12 +23,21 @@ export default async function(peerId, modules = []) {
   await snapshotLoad(moduleInstances, SNAPSHOT_FILE)
 
   communicationInterface.handle(commandHandler)
-  api.sync()
+
+  setTimeout(() => { //TODO fix this timeout, used to counter snapshotLoad delay
+    const sync = moduleInstances.reduce((payload, module) => {
+      if (module.sync) {
+        return Object.assign(payload, module.sync())
+      }
+      return payload
+    }, {sync:true})
+    communicationInterface.broadcast(sync)
+  }, 0);
+
   api.snapshot = () => {
     return moduleInstances.reduce((snapshot, module) => {
       return Object.assign(snapshot, module.snapshot())
     }, {})
   }
-  console.log('API', api)
   return api
 }

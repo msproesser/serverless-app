@@ -41,3 +41,9 @@ export function addBlockCommandHandler(storage) {
     }
   }
 }
+
+export function challengeCommandHandler(storage) {
+  return function challenge(command) {
+    
+  }
+}

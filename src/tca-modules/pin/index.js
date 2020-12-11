@@ -13,6 +13,7 @@ export default function(communicationInterface) {
   return {
     handlers, api,
     load: (backup) => storage.load(backup),
-    snapshot: () => storage.snapshot()
+    snapshot: () => storage.snapshot(),
+    sync: () => storage.snapshot()
   }
 } 

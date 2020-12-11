@@ -4,7 +4,9 @@ import { retry, streamToJSON } from "../helper"
 export default async function(nodeP2p, protocol) {
   const commInterface = {}
   const knownPeers = new Set()
+
   commInterface.handle = function(handler) {
+    commInterface.handler = handler
     nodeP2p.handle(protocol, ({stream}) => {
       pipe(
         stream,
@@ -19,7 +21,11 @@ export default async function(nodeP2p, protocol) {
     })
   }
 
-  async function sendMessageToPeer(peer, message, responseHandler = () => {}) {
+  function responseHandler(response) {
+    commInterface.handler(response)
+  }
+
+  async function sendMessageToPeer(peer, message) {
     try {
       const {stream} = await retry(3, () => nodeP2p.dialProtocol(peer, protocol))
       streamToJSON
@@ -32,7 +38,7 @@ export default async function(nodeP2p, protocol) {
     }
   }
 
-  commInterface.broadcast = function(message, responseHandler = () => {}) {
+  commInterface.broadcast = function(message) {
     commInterface.send([...knownPeers], message, responseHandler)
   }
 
@@ -40,7 +46,7 @@ export default async function(nodeP2p, protocol) {
     knownPeers.add(peer)
   }
 
-  commInterface.send = function(peerList, message, responseHandler = () => {}) {
+  commInterface.send = function(peerList, message) {
     peerList.forEach(peer => sendMessageToPeer(peer, message, responseHandler))
   }
   

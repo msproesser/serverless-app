@@ -6,6 +6,7 @@ const app = express()
 app.use(express.json())
 
 const PEER_ID_FILE = process.env.PEER_ID_FILE || '../peer-id.json'
+const SERVER_PORT = process.env.SERVER_PORT || 20000
 
 const thePeer = PeerId.createFromJSON(require(PEER_ID_FILE))
 
@@ -61,5 +62,5 @@ thePeer
     res.json({address: api.myAddress()})
   })
 
-  app.listen(20000, () => { console.log('listening on port 20000') })
+  app.listen(SERVER_PORT, () => { console.log('listening on port 20000') })
 })

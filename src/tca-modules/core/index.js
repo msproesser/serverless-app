@@ -15,9 +15,6 @@ export default function(communicationInterface) {
       snapshot.sync = true
       return communicationInterface.send([p2pAddress], snapshot)
     },
-    sync() {
-      storage.list().forEach(api.joinNetwork)
-    },
     addPeer(address) {
       storage.add(address)
       communicationInterface.addPeer(address)
@@ -28,7 +25,13 @@ export default function(communicationInterface) {
   })
   return {
     handlers, api,
-    load: storage.load,
-    snapshot: storage.snapshot
+    load: ({peers = []}) => {
+      peers.forEach(peer => {
+        storage.load(peer)
+        communicationInterface.addPeer(peer)
+      })
+    },
+    snapshot: storage.snapshot,
+    sync: () => storage.snapshot()
   }
 } 
