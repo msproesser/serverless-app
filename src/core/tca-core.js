@@ -8,24 +8,24 @@ import { mergeModules, snapshotLoad, snapshotHandler, nodeHandler } from './help
 
 const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || './snapshot.json'
 
-export default async function(peerId, modules = []) {
+export default async function(peerId, moduleFactories = []) {
   const nodeP2p = new NodeP2P(peerId)
   const communicationInterface = await communicationInterfaceFactory(nodeP2p, '/tca-sync/1.0')
-  const moduleInstances = modules.map(module => module(communicationInterface))
-  moduleInstances.push(CoreModule(communicationInterface))
+  const modules = moduleFactories.map(module => module(communicationInterface))
+  modules.push(CoreModule(communicationInterface))
 
-  const {api, handlers} = mergeModules(moduleInstances)
+  const {api, handlers} = mergeModules(modules)
   api.addPeer(communicationInterface.myAddress)
   const commandHandler = nodeHandler([
     ...handlers,
-    snapshotHandler(moduleInstances, SNAPSHOT_FILE)
+    snapshotHandler(modules, SNAPSHOT_FILE)
   ])
-  await snapshotLoad(moduleInstances, SNAPSHOT_FILE)
+  await snapshotLoad(modules, SNAPSHOT_FILE)
 
   communicationInterface.handle(commandHandler)
 
   setTimeout(() => { //TODO fix this timeout, used to counter snapshotLoad delay
-    const sync = moduleInstances.reduce((payload, module) => {
+    const sync = modules.reduce((payload, module) => {
       if (module.sync) {
         return Object.assign(payload, module.sync())
       }
@@ -35,7 +35,7 @@ export default async function(peerId, modules = []) {
   }, 0);
 
   api.snapshot = () => {
-    return moduleInstances.reduce((snapshot, module) => {
+    return modules.reduce((snapshot, module) => {
       return Object.assign(snapshot, module.snapshot())
     }, {})
   }
