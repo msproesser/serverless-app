@@ -9,7 +9,7 @@ import { mergeModules, snapshotLoad, snapshotHandler, nodeHandler } from './help
 const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || './snapshot.json'
 
 export default async function(peerId, moduleFactories = []) {
-  const nodeP2p = new NodeP2P(peerId)
+  const nodeP2p = await NodeP2P(peerId)
   const communicationInterface = await communicationInterfaceFactory(nodeP2p, '/tca-sync/1.0')
   const modules = moduleFactories.map(module => module(communicationInterface))
   modules.push(CoreModule(communicationInterface))

@@ -1,5 +1,3 @@
-'use strict'
-
 import TCP from 'libp2p-tcp'
 import WS from 'libp2p-websockets'
 import WebrtcStar from 'libp2p-webrtc-star'
@@ -13,46 +11,34 @@ import GossipSub from 'libp2p-gossipsub'
 import defaultsDeep from '@nodeutils/defaults-deep'
 import libp2p from 'libp2p'
 
-
-export default class NodeP2P extends libp2p {
-  constructor (peerId) {
-    const defaults = {
-      peerId,
-      addresses: {
-        listen: [
-          '/ip4/0.0.0.0/tcp/0/',
-          '/ip6/::/tcp/0',
-          '/ip4/0.0.0.0/tcp/0/ws',
-          '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
-        ]
+export default function NodeP2P(peerId) {
+  return libp2p.create({
+    peerId,
+    addresses: {
+      listen: [
+        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+      ]
+    },
+    modules: {
+      transport: [ TCP, WS, WebrtcStar ],
+      streamMuxer: [ mplex ],
+      connEncryption: [ NOISE ],
+      peerDiscovery: [ MDNS ],
+      dht: DHT,
+      pubsub: GossipSub
+    },
+    config: {
+      transport : {
+        [WebrtcStar.prototype[Symbol.toStringTag]]: {
+          wrtc
+        }
       },
-      modules: {
-        transport: [ TCP, WS, WebrtcStar ],
-        streamMuxer: [ mplex ],
-        connEncryption: [ NOISE ],
-        peerDiscovery: [ Bootstrap, MDNS ],
-        dht: DHT,
-        pubsub: GossipSub
-      },
-      config: {
-        transport : {
-          [WebrtcStar.prototype[Symbol.toStringTag]]: {
-            wrtc
-          }
-        },
-        peerDiscovery: {
-          bootstrap: {
-            list: [ '/dnsaddr/sjc-1.bootstrap.libp2p.io/tcp/4001/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN' ]
-          }
-        },
-        dht: {
-          enabled: true,
-          randomWalk: {
-            enabled: true
-          }
+      dht: {
+        enabled: true,
+        randomWalk: {
+          enabled: true
         }
       }
     }
-    super(defaults)
-  }
+  })
 }

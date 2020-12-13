@@ -1,6 +1,8 @@
 import pipe from "it-pipe"
 import { retry, streamToJSON } from "../helper"
 
+const SIGNALING_SERVER="/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star"
+
 export default async function(nodeP2p, protocol) {
   const commInterface = {}
   const knownPeers = new Set()
@@ -11,6 +13,7 @@ export default async function(nodeP2p, protocol) {
       pipe(
         stream,
         streamToJSON(command => {
+          console.log('Received new command', command)
           const responses = handler(command).map(response => {
             if(typeof(response) === 'string') return response
             return JSON.stringify(response)
@@ -21,14 +24,14 @@ export default async function(nodeP2p, protocol) {
     })
   }
 
-  function responseHandler(response) {
-    commInterface.handler(response)
+  function responseHandler(command) {
+    console.log('received a RESPONSE', command)
+    commInterface.handler(command)
   }
 
   async function sendMessageToPeer(peer, message) {
     try {
-      const {stream} = await retry(3, () => nodeP2p.dialProtocol(peer, protocol))
-      streamToJSON
+      const {stream} = await retry(3, () => nodeP2p.dialProtocol(SIGNALING_SERVER+peer, protocol))
       pipe(stream, streamToJSON(responseHandler))
       pipe([JSON.stringify(message)], stream)
       return true
@@ -54,6 +57,7 @@ export default async function(nodeP2p, protocol) {
     const fullAddress = '/p2p/' + nodeP2p.peerId.toB58String()
     console.log('my address: ' + fullAddress)
     commInterface.myAddress = fullAddress
+    console.log(nodeP2p.multiaddrs.map(ma => ma.toString() + '/p2p/' + nodeP2p.peerId.toB58String()))
   })
 
   return commInterface
