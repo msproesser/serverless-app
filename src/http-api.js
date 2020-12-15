@@ -41,7 +41,8 @@ thePeer
     }
   })
   app.get('/pins', (req, res) => {
-    const pins = api.pin.list(req.query.receiver)
+    const receiver = req.query.receiver || ''
+    const pins = api.pin.list(receiver.replace(' ', '+'))
     res.json({pins})
   })
 

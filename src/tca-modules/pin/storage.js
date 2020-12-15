@@ -23,7 +23,7 @@ export class Storage {
     const receiver = this.accounts.get(pin.receiver) || false
     if (isValid && !!receiver) {
       const pins = this.pins.get(pin.receiver) || []
-      const exists = pins.filter(p => p.signature === pin.signature) > 0
+      const exists = pins.filter(p => p.signature === pin.signature).length > 0
       if (!exists) {
         this.pins.set(pin.receiver, [...pins, pin])
       }
@@ -35,8 +35,8 @@ export class Storage {
   }
 
   listPins(receiver) {
-    if (receiver) {
-      return [[receiver, this.pins.get(receiver)]] || []
+    if (!!receiver) {
+      return [[receiver, this.pins.get(receiver) || []]]
     }
     return [...this.pins.entries()]
   }
@@ -52,7 +52,7 @@ export class Storage {
   
   snapshot() {
     const accounts = this.listAccounts()
-    const pins = this.listPins()
+    const pins = this.listPins().map(pin => pin[1]).flat()
     return { accounts, pins }
   }
 }

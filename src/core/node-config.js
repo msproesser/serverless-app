@@ -1,3 +1,4 @@
+'use strict'
 import TCP from 'libp2p-tcp'
 import WS from 'libp2p-websockets'
 import WebrtcStar from 'libp2p-webrtc-star'
@@ -16,7 +17,9 @@ export default function NodeP2P(peerId) {
     peerId,
     addresses: {
       listen: [
-        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+        '/ip4/0.0.0.0/tcp/0',
+        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+        // '/ip4/116.203.242.65/tcp/443/wss/p2p-webrtc-star/'
       ]
     },
     modules: {
